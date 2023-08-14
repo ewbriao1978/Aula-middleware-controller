@@ -2,6 +2,11 @@ const { sequelize, Sequelize } = require ('../config/database')
 
 const livrosModel = require('../models/livros')(sequelize,Sequelize)
 
+// validator
+const { validationResult } = require('express-validator');
+
+// function to make suitable validation to attached as a middleware to routers file
+
 exports.showForm = (req,res) => {
     res.render("myform", {layout: false});
 }
@@ -44,6 +49,13 @@ exports.update = (req,res) => {
 
 
 exports.save = (req,res) => {
+
+    const errors = validationResult(req)
+    if(!errors.isEmpty()) {
+        req.session.errors = errors.array()
+        return res.redirect('/')
+    }
+
     const bookSetData = {
         title: req.body.title,
         description: req.body.description
@@ -51,6 +63,8 @@ exports.save = (req,res) => {
 
     livrosModel.create(bookSetData).then (data => {
         console.log('Data saved');
+        req.flash("success_msg","Data saved successful.")
+        req.session.errors = null
         res.redirect('/')
     }).catch(err => {
         console.log("Error" + err)
